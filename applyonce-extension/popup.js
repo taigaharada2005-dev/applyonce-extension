@@ -108,15 +108,32 @@ async function tailorWithGemini(profile, scans) {
     throw new Error("AIで処理すべき未入力の設問や未分類項目が見つかりません。通常の一括入力をお試しください。");
   }
 
+  function toHira(s) {
+    return String(s || "").replace(/[\u30a1-\u30f6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
+  }
+  function toKata(s) {
+    return String(s || "").replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
+  }
+
+  const famK = profile.familyKana || "";
+  const givK = profile.givenKana || "";
+  const fulK = profile.fullNameKana || "";
+
   // All applicant facts formatted clearly
   const facts = {
     // Basic Profile
     fullNameJP: profile.fullNameJP || "",
-    fullNameKana: profile.fullNameKana || "",
+    fullNameKana: toKata(fulK),
     familyJP: profile.familyJP || "",
     givenJP: profile.givenJP || "",
-    familyKana: profile.familyKana || "",
-    givenKana: profile.givenKana || "",
+    familyKana: toKata(famK),
+    givenKana: toKata(givK),
+
+    // Hiragana versions (required when field asks for 'ふりがな' in hiragana)
+    fullNameHiragana: toHira(fulK),
+    familyHiragana: toHira(famK),
+    givenHiragana: toHira(givK),
+
     firstEN: profile.firstEN || "",
     lastEN: profile.lastEN || "",
     birthYear: profile.birthYear || "",
@@ -191,7 +208,10 @@ async function tailorWithGemini(profile, scans) {
     "   - If it is a dropdown/select element with options, choose the best matching option string from its provided 'options' list.",
     "   - Do NOT guess or hallucinate sensitive info (such as passwords, criminal records, bank accounts, or visa authorization). If unsure or not applicable, omit the field.",
     "   - NAME FIELDS RULE: For applicant names (氏名, 姓, 名, Last Name, First Name, etc.), ALWAYS use Japanese Kanji (familyJP / givenJP / fullNameJP) unless the label explicitly requests English, Romaji, or Alphabet (e.g. 'ローマ字', '英語', 'Alphabet', 'Passport'). Never output English/Romaji for standard Kanji name fields.",
-    "   - KANA FIELDS RULE: For Furigana/Kana fields (フリガナ, ふりがな, カナ), ALWAYS use Katakana (familyKana / givenKana / fullNameKana) or Hiragana as requested. Never use Kanji or English.",
+    "   - KANA / FURIGANA RULE: Pay strict attention to Hiragana vs Katakana distinction in Japanese:",
+    "     * If the field specifies 'ふりがな' (in hiragana), 'ひらがな', or '平仮名', you MUST use Hiragana (familyHiragana / givenHiragana / fullNameHiragana).",
+    "     * If the field specifies 'フリガナ' (in katakana), 'カタカナ', or '片仮名', you MUST use Katakana (familyKana / givenKana / fullNameKana).",
+    "     * Never output Kanji or English into furigana fields.",
     "3. Output Format: Return ONLY a valid JSON object matching this schema:",
     "   {\"answers\": [{\"id\": \"<field_id>\", \"value\": \"<value_to_fill>\"}]}",
     `COMPANY: ${company || "Not specified"}`,

@@ -11,13 +11,37 @@ function pageRuntime(mode, profile = {}, answers = {}) {
   function cleanJapanese(s) {
     return String(s || "")
       .replace(/[\s\u3000_\-:：()（）＊*[\]【】「」]/g, "")
-      .replace(/(?:※|必須|必修|任意|漢字|全角|半角|全角入力|半角数字|半角英数|ハイフンなし|ハイフンあり|ハイフン不要|例[\w\u3000-\u9fff]*)+/gi, "");
+      .replace(/(?:※|必須|必修|任意|漢字|全角|半角|全角入力|半角数字|半角英数|ハイフンなし|ハイフンあり|ハイフン不要|例[：:]?)+/gi, "");
   }
 
   function toHiragana(str) {
     return String(str || "").replace(/[\u30a1-\u30f6]/g, ch =>
       String.fromCharCode(ch.charCodeAt(0) - 0x60)
     );
+  }
+
+  function toKatakana(str) {
+    return String(str || "").replace(/[\u3041-\u3096]/g, ch =>
+      String.fromCharCode(ch.charCodeAt(0) + 0x60)
+    );
+  }
+
+  function getDirectText(el) {
+    const list = [];
+    if (el.labels) list.push(...[...el.labels].map(n => n.innerText || n.textContent));
+    if (el.id) {
+      try {
+        const la = document.querySelector(`label[for="${CSS.escape(el.id)}"]`);
+        if (la) list.push(la.innerText);
+      } catch {}
+    }
+    const p = el.getAttribute("placeholder");
+    if (p) list.push(p);
+    const aria = el.getAttribute("aria-label");
+    if (aria) list.push(aria);
+    const title = el.getAttribute("title");
+    if (title) list.push(title);
+    return tidy(list.join(" "));
   }
 
   function getLabel(el) {
@@ -256,20 +280,59 @@ function pageRuntime(mode, profile = {}, answers = {}) {
     const has = (...rs) => rs.some(r => r.test(s));
     const field = (v, why) => [firstNonEmpty(v), why];
 
-    // 1. Furigana / Kana (with automatic Hiragana conversion if requested)
-    if (has(/ふりがな|フリガナ|カナ|katakana|kana|ひらがな/)) {
-      const wantHiragana = has(/ひらがな|平仮名/) || (/ふりがな/i.test(label) && !/フリガナ|カタカナ/i.test(label));
-      const famK = wantHiragana ? toHiragana(familyKana) : familyKana;
-      const givK = wantHiragana ? toHiragana(givenKana) : givenKana;
-      const fulK = wantHiragana ? toHiragana(fullKana) : fullKana;
+    // 1. Furigana / Kana (with strict Hiragana vs Katakana distinction)
+    if (has(/ふりがな|フリガナ|カナ|katakana|kana|ひらがな/) || (has(/セイ|メイ|せい|めい/) && !has(/漢字/))) {
+      const direct = getDirectText(el);
+      let wantHiragana = false;
+      const cleanPlaceholder = (el.placeholder || "").replace(/^(?:例[：:]?\s*|e\.?g\.?[：:]?\s*)/i, "").replace(/[\s\u3000]/g, "").trim();
+
+      // 1. Check direct element text (label, placeholder, title, aria-label)
+      if (/ひらがな|平仮名/i.test(direct)) {
+        wantHiragana = true;
+      } else if (/カタカナ|片仮名/i.test(direct)) {
+        wantHiragana = false;
+      } else if (/ふりがな/.test(direct)) {
+        wantHiragana = true;
+      } else if (/フリガナ/.test(direct)) {
+        wantHiragana = false;
+      } else if (cleanPlaceholder && /^[ぁ-ん]+$/.test(cleanPlaceholder)) {
+        wantHiragana = true;
+      } else if (cleanPlaceholder && /^[ァ-ン]+$/.test(cleanPlaceholder)) {
+        wantHiragana = false;
+      } else {
+        // 2. Check full label excluding parent section heading [ ... ]
+        const labelWithoutHeading = label.replace(/^\[[^\]]*\]\s*\|\s*/, "");
+        if (/ひらがな|平仮名/i.test(labelWithoutHeading)) {
+          wantHiragana = true;
+        } else if (/カタカナ|片仮名/i.test(labelWithoutHeading)) {
+          wantHiragana = false;
+        } else if (/ふりがな/.test(labelWithoutHeading) && !/フリガナ/.test(labelWithoutHeading)) {
+          wantHiragana = true;
+        } else if (/ふりがな/.test(labelWithoutHeading) && /フリガナ/.test(labelWithoutHeading)) {
+          const posHira = labelWithoutHeading.indexOf("ふりがな");
+          const posKata = labelWithoutHeading.indexOf("フリガナ");
+          wantHiragana = posHira !== -1 && (posKata === -1 || posHira < posKata);
+        } else if (/フリガナ/.test(labelWithoutHeading)) {
+          wantHiragana = false;
+        } else if (/せい|めい/.test(labelWithoutHeading) && !/セイ|メイ/.test(labelWithoutHeading)) {
+          wantHiragana = true;
+        } else {
+          // Default: if "ふりがな" appears anywhere in Hiragana, output Hiragana!
+          wantHiragana = /ふりがな/.test(label);
+        }
+      }
+
+      const famK = wantHiragana ? toHiragana(familyKana) : toKatakana(familyKana);
+      const givK = wantHiragana ? toHiragana(givenKana) : toKatakana(givenKana);
+      const fulK = wantHiragana ? toHiragana(fullKana) : toKatakana(fullKana);
 
       if (has(/姓|セイ|せい|苗字|名字|last/) || /^(?:sei|kana1)$/i.test(el.name || el.id)) {
-        return field(famK, wantHiragana ? "ふりがな（姓）" : "フリガナ（姓）");
+        return field(famK, wantHiragana ? "ふりがな（姓・ひらがな）" : "フリガナ（姓・カタカナ）");
       }
       if (has(/メイ|めい|first/) || isGivenName(cleanPrimary) || /^(?:mei|kana2)$/i.test(el.name || el.id)) {
-        return field(givK, wantHiragana ? "ふりがな（名）" : "フリガナ（名）");
+        return field(givK, wantHiragana ? "ふりがな（名・ひらがな）" : "フリガナ（名・カタカナ）");
       }
-      return field(fulK, wantHiragana ? "ふりがな" : "フリガナ");
+      return field(fulK, wantHiragana ? "ふりがな（ひらがな）" : "フリガナ（カタカナ）");
     }
 
     // 2. Email (handles both primary and confirmation email fields)
