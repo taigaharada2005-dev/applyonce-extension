@@ -1,0 +1,28 @@
+# Environment and secrets
+.env
+.env.*
+*.env
+*.key
+*.pem
+*.secret
+
+# Logs and runtime artifacts
+*.log
+console-*.log
+.playwright-mcp/
+.agent/
+.agents/
+graphify-out/
+
+# OS and Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Distribution archives
+*.zip
+
+# Local profile exports or test data
+*-backup.json
+profile.json

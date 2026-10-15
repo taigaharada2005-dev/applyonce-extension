@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>ApplyOnce</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body class="popup">
+  <header class="topbar">
+    <div class="brand"><span class="brandmark">A</span><span>ApplyOnce</span></div>
+    <button class="textbutton" id="openOptions">プロフィール設定 ↗</button>
+  </header>
+  <main class="popupmain">
+    <div class="eyebrow">応募フォーム入力アシスタント</div>
+    <h1>応募情報を、<br>一度の操作で。</h1>
+    <div id="site" class="sitechip">このページを確認しています…</div>
+    <label class="field"><span>応募先企業名 <small>任意</small></span><input id="company" placeholder="例：株式会社○○" autocomplete="off"/></label>
+    <label class="field"><span>募集要項・職種説明 <small>ページから取得可能</small></span><textarea id="jobText" rows="3" placeholder="募集要項を貼り付けると、AI文章が企業に合致した内容になります。"></textarea></label>
+    <div class="inline-actions">
+      <button class="secondary small" id="getContext">ページから本文を取得</button>
+      <span id="detected" class="smallnote"></span>
+    </div>
+
+    <details id="previewDetails" class="results preview-box" hidden>
+      <summary>検出された入力欄のプレビュー (<span id="previewCount">0</span>件)</summary>
+      <div id="previewList"></div>
+    </details>
+
+    <div class="actionstack">
+      <button class="primary" id="fillBasic">保存した情報を一括入力 <span>→</span></button>
+      <button class="secondary big" id="fillAI">✦ 企業向けにAI調整して入力</button>
+    </div>
+    <div id="status" class="status" role="status" aria-live="polite">まず「プロフィール設定」で情報を登録してください。</div>
+    <details id="resultDetails" class="results" hidden>
+      <summary>入力結果の詳細を見る</summary>
+      <div id="resultList"></div>
+    </details>
+    <p class="footnote">フォームへの入力のみを実行します。自動送信、利用規約への同意、ファイル添付は行いません。必ず目視確認してから提出してください。</p>
+  </main>
+  <script src="engine.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

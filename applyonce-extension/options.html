@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>ApplyOnce · プロフィール設定</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body class="settings">
+  <header class="topbar settingsbar">
+    <div class="brand"><span class="brandmark">A</span><span>ApplyOnce</span></div>
+    <div class="header-tools">
+      <button type="button" class="textbutton" id="clearProfileBtn">入力欄をすべてクリア</button>
+      <span class="topaside">PROFILE SETTINGS</span>
+    </div>
+  </header>
+  <main class="settingsmain">
+    <div class="eyebrow">PROFILE</div>
+    <h1>最初に、あなたの情報を。</h1>
+    <p class="intro">ここに入力した事実だけを使って応募フォームを埋めます。姓・名やフリガナ、住所、生年月日を登録しておくと、企業の様々なフォーム形式に正確に対応できます。</p>
+    <form id="profileForm">
+      <section class="panel">
+        <div class="sectionhead"><span class="sectionno">01</span><h2>基本情報</h2></div>
+        <div class="formgrid">
+          <label class="field"><span>氏名（日本語・フルネーム）</span><input name="fullNameJP" placeholder="山田 太郎"/></label>
+          <label class="field"><span>氏名（カナ・フルネーム）</span><input name="fullNameKana" placeholder="ヤマダ タロウ"/></label>
+          <label class="field"><span>姓（日本語）</span><input name="familyJP" placeholder="山田"/></label>
+          <label class="field"><span>名（日本語）</span><input name="givenJP" placeholder="太郎"/></label>
+          <label class="field"><span>姓（フリガナ）</span><input name="familyKana" placeholder="ヤマダ"/></label>
+          <label class="field"><span>名（フリガナ）</span><input name="givenKana" placeholder="タロウ"/></label>
+          <label class="field"><span>First name（英語名）</span><input name="firstEN" placeholder="Taro"/></label>
+          <label class="field"><span>Last name（英語姓）</span><input name="lastEN" placeholder="Yamada"/></label>
+          <label class="field"><span>生年月日（年・西暦）</span><input name="birthYear" placeholder="2003"/></label>
+          <div class="field">
+            <span>生年月日（月・日）</span>
+            <div class="input-with-button">
+              <input name="birthMonth" placeholder="04" title="月"/>
+              <input name="birthDay" placeholder="01" title="日"/>
+            </div>
+          </div>
+          <label class="field">
+            <span>性別</span>
+            <select name="gender">
+              <option value="">選択してください</option>
+              <option value="男性">男性</option>
+              <option value="女性">女性</option>
+              <option value="その他・無回答">その他・無回答</option>
+            </select>
+          </label>
+          <label class="field"><span>メールアドレス</span><input name="email" type="email" placeholder="example@mail.com"/></label>
+          <label class="field"><span>電話番号 <small>ハイフン有無問わず可</small></span><input name="phone" placeholder="090-0000-0000"/></label>
+          <label class="field"><span>郵便番号 <small>ハイフン有無問わず可</small></span><input name="postalCode" placeholder="100-0001"/></label>
+          <label class="field"><span>都道府県</span><input name="prefecture" placeholder="東京都"/></label>
+          <label class="field"><span>市区町村</span><input name="city" placeholder="千代田区"/></label>
+          <label class="field"><span>番地・丁目・号</span><input name="addressLine" placeholder="千代田1-1"/></label>
+          <label class="field"><span>建物名・部屋番号</span><input name="building" placeholder=""/></label>
+          <label class="field full"><span>住所（1本化入力用）</span><input name="address" placeholder="東京都千代田区千代田1-1"/></label>
+          <label class="field"><span>国 / Country</span><input name="country" placeholder="日本"/></label>
+          <label class="field"><span>LinkedIn URL</span><input name="linkedin" placeholder="https://linkedin.com/in/..."/></label>
+          <label class="field"><span>GitHub URL</span><input name="github" placeholder="https://github.com/..."/></label>
+          <label class="field"><span>Portfolio URL</span><input name="portfolio" placeholder="https://..."/></label>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="sectionhead"><span class="sectionno">02</span><h2>学歴・専攻</h2></div>
+        <div class="formgrid">
+          <label class="field"><span>学校名（日本語）</span><input name="schoolJP" placeholder="○○大学"/></label>
+          <label class="field"><span>University / School（英語）</span><input name="schoolEN" placeholder="Example University"/></label>
+          <label class="field"><span>学部</span><input name="faculty" placeholder="工学部"/></label>
+          <label class="field"><span>学科・専攻 / Major</span><input name="major" placeholder="情報科学科"/></label>
+          <label class="field">
+            <span>文理区分</span>
+            <select name="academicType">
+              <option value="理系">理系</option>
+              <option value="文系">文系</option>
+            </select>
+          </label>
+          <label class="field"><span>学位 / Degree</span><input name="degree" placeholder="学士"/></label>
+          <label class="field">
+            <span>卒業状況</span>
+            <select name="graduationStatus">
+              <option value="卒業見込み">卒業見込み</option>
+              <option value="卒業">卒業</option>
+              <option value="修了見込み">修了見込み</option>
+            </select>
+          </label>
+          <label class="field"><span>卒業予定年（西暦）</span><input name="graduationYear" placeholder="2028"/></label>
+          <label class="field"><span>卒業予定月</span><input name="graduationMonth" placeholder="03"/></label>
+          <label class="field"><span>GPA <small>必要な場合のみ</small></span><input name="gpa" placeholder="3.5"/></label>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="sectionhead"><span class="sectionno">03</span><h2>経験と文章の素材</h2></div>
+        <p class="sectionhint">AIはここに書かれた事実を企業ごとに取捨選択して回答を組み立てます。数字や具体的な取り組みを記入してください。</p>
+        <div class="formgrid">
+          <label class="field full"><span>経験・職歴・インターン <small>事実を具体的に</small></span><textarea name="experience" rows="5" placeholder="例：長期インターンシップでの実務経験、アルバイトでの業務改善、研究活動など具体的に記入してください。"></textarea></label>
+          <label class="field full"><span>プロジェクト / Research / ゼミ</span><textarea name="projects" rows="4" placeholder="例：研究室でのテーマ、個人開発プロダクト、担当したゼミ発表など。"></textarea></label>
+          <label class="field full"><span>スキル・技術スタック</span><textarea name="skills" rows="3" placeholder="Python, JavaScript, SQL, 設計, 分析手法など"></textarea></label>
+          <label class="field full"><span>資格・語学</span><textarea name="certifications" rows="3" placeholder="TOEIC, 資格など"></textarea></label>
+          <label class="field full"><span>自己PR（基本文）</span><textarea name="selfPR" rows="4" placeholder="私の強みは…"></textarea></label>
+          <label class="field full"><span>志望動機の軸・価値観</span><textarea name="motivation" rows="4" placeholder="興味領域、価値観、なぜその仕事をしたいか"></textarea></label>
+          <label class="field full"><span>将来やりたい仕事・キャリアプラン</span><textarea name="careerGoals" rows="3" placeholder="キャリアの方向性"></textarea></label>
+          <label class="field full"><span>英語プロフィール / Summary</span><textarea name="englishSummary" rows="4" placeholder="English summary"></textarea></label>
+          <label class="field full"><span>その他、AIが使ってよい事実</span><textarea name="otherFacts" rows="4" placeholder="部活動、サークルでのリーダー経験など"></textarea></label>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="sectionhead"><span class="sectionno">04</span><h2>AI連携 <span class="optional">任意</span></h2></div>
+        <p class="sectionhint">基本情報や設問（志望動機・自己PR等）をフォームの構造に合わせてインテリジェントに埋める際に利用します。</p>
+        <div class="formgrid">
+          <label class="field full">
+            <span>AIプロバイダー</span>
+            <select name="aiProvider" id="aiProviderSelect">
+              <option value="openai" selected>OpenAI (推奨: gpt-6-luna)</option>
+              <option value="gemini">Google Gemini</option>
+            </select>
+          </label>
+          <label class="field full">
+            <span id="apiKeyLabel">OpenAI APIキー</span>
+            <div class="input-with-button">
+              <input name="apiKey" type="password" autocomplete="off" placeholder="sk-... を入力"/>
+              <button type="button" class="secondary small" id="testApiBtn">接続テスト</button>
+            </div>
+            <div id="apiTestStatus" class="inline-status"></div>
+          </label>
+          <label class="field full">
+            <span>使用モデル</span>
+            <select name="model" id="modelSelect">
+              <option value="gpt-6-luna" selected>gpt-6-luna（高速・安価・DOM構造理解に最適）</option>
+              <option value="gpt-4o">gpt-4o</option>
+              <option value="gpt-4o-mini">gpt-4o-mini</option>
+              <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+              <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+            </select>
+          </label>
+        </div>
+        <p class="notice">APIキーはブラウザのローカルストレージ（chrome.storage.local）にのみ保存されます。JSONバックアップには含まれません。第三者と共有するPC環境では保存しないでください。</p>
+      </section>
+      <div class="savebar">
+        <div id="saveStatus" role="status"></div>
+        <div class="saveactions">
+          <input type="file" id="importFileInput" accept=".json" style="display:none"/>
+          <button class="textbutton" type="button" id="importButton">JSONインポート</button>
+          <button class="textbutton" type="button" id="exportButton">JSONバックアップ</button>
+          <button class="primary" type="submit">プロフィールを保存 →</button>
+        </div>
+      </div>
+    </form>
+  </main>
+  <script src="options.js"></script>
+</body>
+</html>

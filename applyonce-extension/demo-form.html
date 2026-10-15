@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>株式会社テクノロジー・フューチャー 新卒・中途採用エントリーフォーム（ApplyOnce動作検証用）</title>
+  <style>
+    :root {
+      --bg: #f4f6fa;
+      --card: #ffffff;
+      --text: #222938;
+      --muted: #626e82;
+      --border: #dbe1eb;
+      --primary: #2348db;
+      --primary-light: #eff3ff;
+      --accent: #0f8a5f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 30px 16px 80px;
+      background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 820px;
+      margin: 0 auto;
+    }
+    .banner {
+      background: #eef3ff;
+      border: 1px solid #c7d7fc;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      font-size: 13.5px;
+    }
+    .banner strong { color: var(--primary); }
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      padding: 32px 36px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+    }
+    h1 {
+      font-size: 24px;
+      margin: 0 0 10px;
+      letter-spacing: -0.02em;
+    }
+    .lead {
+      color: var(--muted);
+      font-size: 14px;
+      margin: 0 0 20px;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      border-left: 4px solid var(--primary);
+      padding-left: 10px;
+      margin: 28px 0 16px;
+      color: #172b4d;
+    }
+    .section-title:first-of-type { margin-top: 10px; }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+    .row.three-col {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .field.full { grid-column: 1 / -1; }
+    label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #344563;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 10.5px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 6px;
+      vertical-align: middle;
+      font-weight: 700;
+    }
+    .badge.req { background: #ffebe6; color: #de350b; }
+    .badge.opt { background: #ebecf0; color: #505f79; }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+      background: #fff;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(35, 72, 219, 0.12);
+    }
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    .split-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .split-row input { flex: 1; }
+    .split-sep { color: var(--muted); font-weight: bold; }
+
+    .btn-bar {
+      display: flex;
+      gap: 12px;
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+    button.btn {
+      padding: 11px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background 0.15s;
+    }
+    button.btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    button.btn-primary:hover { background: #1a3ab8; }
+    button.btn-secondary {
+      background: #fff;
+      border-color: var(--border);
+      color: var(--text);
+    }
+    button.btn-secondary:hover { background: #f4f6fa; }
+
+    dialog {
+      border: 0;
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 650px;
+      width: 90%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+    dialog::backdrop {
+      background: rgba(0,0,0,0.4);
+    }
+    .dialog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .dialog-body {
+      max-height: 400px;
+      overflow-y: auto;
+      font-size: 13px;
+    }
+    .dialog-row {
+      display: flex;
+      padding: 6px 0;
+      border-bottom: 1px solid #edf1f7;
+    }
+    .dialog-key {
+      width: 180px;
+      font-weight: 600;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .dialog-val {
+      flex: 1;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="banner">
+      <strong>【ApplyOnce 動作確認用デモページ】</strong><br>
+      このページは、ApplyOnce 拡張機能の一括入力およびAI文面生成の動作をテストするための模擬エントリーフォームです。<br>
+      ※ ローカルファイル（file://）でテストする場合、Chromeの拡張機能管理画面（<code>chrome://extensions</code>）で ApplyOnce の「詳細」を開き、「<strong>ファイルのURLへのアクセスを許可</strong>」を有効にしてください。
+    </div>
+
+    <main class="card">
+      <h1>株式会社テクノロジー・フューチャー 採用エントリー</h1>
+      <p class="lead">
+        募集職種：ソフトウェアエンジニア（フロントエンド／バックエンド／AIシステム）<br>
+        当社は、先端技術とAIを活用して企業の業務課題を抜本的に解決するSaaSプロダクト群を開発しています。課題解決力と探究心を持った仲間を歓迎します。
+      </p>
+
+      <form id="entryForm" onsubmit="event.preventDefault(); showCheckModal();">
+        <div class="section-title">01. 基本情報</div>
+
+        <div class="row">
+          <div class="field">
+            <label for="family_name">姓（漢字）<span class="badge req">必須</span></label>
+            <input type="text" id="family_name" name="family_name" placeholder="山田"/>
+          </div>
+          <div class="field">
+            <label for="given_name">名（漢字）<span class="badge req">必須</span></label>
+            <input type="text" id="given_name" name="given_name" placeholder="太郎"/>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="family_kana">セイ（フリガナ）<span class="badge req">必須</span></label>
+            <input type="text" id="family_kana" name="family_kana" placeholder="ヤマダ"/>
+          </div>
+          <div class="field">
+            <label for="given_kana">メイ（フリガナ）<span class="badge req">必須</span></label>
+            <input type="text" id="given_kana" name="given_kana" placeholder="タロウ"/>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>生年月日（西暦 年・月・日）<span class="badge req">必須</span></label>
+            <div class="split-row">
+              <input type="text" name="birth_year" placeholder="2005" title="生年"/>
+              <span class="split-sep">年</span>
+              <input type="text" name="birth_month" placeholder="04" title="月"/>
+              <span class="split-sep">月</span>
+              <input type="text" name="birth_day" placeholder="15" title="日"/>
+              <span class="split-sep">日</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="gender">性別<span class="badge opt">任意</span></label>
+            <select id="gender" name="gender">
+              <option value="">選択してください</option>
+              <option value="男性">男性</option>
+              <option value="女性">女性</option>
+              <option value="その他・無回答">その他・無回答</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="email">メールアドレス<span class="badge req">必須</span></label>
+            <input type="email" id="email" name="email" placeholder="example@mail.com"/>
+          </div>
+          <div class="field">
+            <label for="email_confirm">メールアドレス（確認用）<span class="badge req">必須</span></label>
+            <input type="email" id="email_confirm" name="email_confirm" placeholder="確認のため再入力"/>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="phone">電話番号（連絡先携帯）<span class="badge req">必須</span></label>
+            <input type="tel" id="phone" name="phone" placeholder="090-0000-0000"/>
+          </div>
+          <div class="field">
+            <label>電話番号（3分割入力テスト）<span class="badge opt">任意</span></label>
+            <div class="split-row">
+              <input type="tel" name="tel1" maxlength="3" placeholder="090" title="市外局番"/>
+              <span class="split-sep">-</span>
+              <input type="tel" name="tel2" maxlength="4" placeholder="1234" title="市内局番"/>
+              <span class="split-sep">-</span>
+              <input type="tel" name="tel3" maxlength="4" placeholder="5678" title="加入者番号"/>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>郵便番号（分割）<span class="badge req">必須</span></label>
+            <div class="split-row">
+              <input type="text" name="zip1" maxlength="3" placeholder="169" title="郵便番号上3桁"/>
+              <span class="split-sep">-</span>
+              <input type="text" name="zip2" maxlength="4" placeholder="8555" title="郵便番号下4桁"/>
+            </div>
+          </div>
+          <div class="field">
+            <label for="prefecture">都道府県<span class="badge req">必須</span></label>
+            <select id="prefecture" name="prefecture">
+              <option value="">選択してください</option>
+              <option value="北海道">北海道</option>
+              <option value="東京都">東京都</option>
+              <option value="神奈川県">神奈川県</option>
+              <option value="千葉県">千葉県</option>
+              <option value="埼玉県">埼玉県</option>
+              <option value="愛知県">愛知県</option>
+              <option value="大阪府">大阪府</option>
+              <option value="京都府">京都府</option>
+              <option value="福岡県">福岡県</option>
+              <option value="その他">その他</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="city">市区町村<span class="badge req">必須</span></label>
+            <input type="text" id="city" name="city" placeholder="新宿区"/>
+          </div>
+          <div class="field">
+            <label for="address_line">番地・号<span class="badge req">必須</span></label>
+            <input type="text" id="address_line" name="address_line" placeholder="1-2-3"/>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="building">建物名・部屋番号<span class="badge opt">任意</span></label>
+          <input type="text" id="building" name="building" placeholder="テクノロジービル 4F"/>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="github">GitHub URL<span class="badge opt">任意</span></label>
+            <input type="url" id="github" name="github" placeholder="https://github.com/..."/>
+          </div>
+          <div class="field">
+            <label for="portfolio">ポートフォリオ URL<span class="badge opt">任意</span></label>
+            <input type="url" id="portfolio" name="portfolio" placeholder="https://..."/>
+          </div>
+        </div>
+
+        <div class="section-title">02. 学歴・専攻情報</div>
+
+        <div class="row">
+          <div class="field">
+            <label for="university">大学・学校名<span class="badge req">必須</span></label>
+            <input type="text" id="university" name="university" placeholder="○○大学"/>
+          </div>
+          <div class="field">
+            <label for="faculty">学部名<span class="badge opt">任意</span></label>
+            <input type="text" id="faculty" name="faculty" placeholder="工学部"/>
+          </div>
+        </div>
+
+        <div class="row three-col">
+          <div class="field">
+            <label for="major">学科・専攻<span class="badge req">必須</span></label>
+            <input type="text" id="major" name="major" placeholder="情報科学科"/>
+          </div>
+          <div class="field">
+            <label for="academic_type">文理区分<span class="badge req">必須</span></label>
+            <select id="academic_type" name="academic_type">
+              <option value="">選択してください</option>
+              <option value="理系">理系（理工・情報等）</option>
+              <option value="文系">文系</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="degree">学位区分<span class="badge req">必須</span></label>
+            <select id="degree" name="degree">
+              <option value="">選択してください</option>
+              <option value="学士">大学（学部・学士）</option>
+              <option value="修士">大学院（修士）</option>
+              <option value="博士">大学院（博士）</option>
+              <option value="高専">高等専門学校</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row three-col">
+          <div class="field">
+            <label for="graduation_status">卒業区分<span class="badge req">必須</span></label>
+            <select id="graduation_status" name="graduation_status">
+              <option value="">選択してください</option>
+              <option value="卒業見込み">卒業見込み</option>
+              <option value="卒業">卒業</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="graduation_year">卒業予定年（西暦）<span class="badge req">必須</span></label>
+            <select id="graduation_year" name="graduation_year">
+              <option value="">選択してください</option>
+              <option value="2025">2025年</option>
+              <option value="2026">2026年</option>
+              <option value="2027">2027年</option>
+              <option value="2028">2028年</option>
+              <option value="2029">2029年</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="graduation_month">卒業予定月<span class="badge req">必須</span></label>
+            <select id="graduation_month" name="graduation_month">
+              <option value="">選択してください</option>
+              <option value="03">3月</option>
+              <option value="09">9月</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="section-title">03. 設問・自由記述（AI文面生成の対象）</div>
+
+        <div class="field">
+          <label for="motivation">志望動機（当社に関心を持った理由をお書きください）<span class="badge req">必須</span></label>
+          <textarea id="motivation" name="motivation" maxlength="500" placeholder="志望動機をご記入ください（最大500文字）"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="experience">学生時代に最も力を入れて取り組んだこと（ガクチカ）<span class="badge req">必須</span></label>
+          <textarea id="experience" name="experience" maxlength="500" placeholder="取り組みの内容、工夫した点、得られた成果など"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="self_pr">自己PR（あなたの強みとそれを活かした経験）<span class="badge req">必須</span></label>
+          <textarea id="self_pr" name="self_pr" maxlength="500" placeholder="自己PRをご記入ください"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="career_goals">入社後に挑戦したい仕事・キャリアプラン<span class="badge opt">任意</span></label>
+          <textarea id="career_goals" name="career_goals" maxlength="400" placeholder="キャリアプランをお書きください"></textarea>
+        </div>
+
+        <div class="btn-bar">
+          <button type="button" class="btn btn-secondary" onclick="resetForm()">フォームをクリア</button>
+          <button type="submit" class="btn btn-primary">入力内容を確認する（シミュレーション）</button>
+        </div>
+      </form>
+    </main>
+  </div>
+
+  <dialog id="checkModal">
+    <div class="dialog-header">
+      <h3 style="margin:0;">フォーム入力内容の確認</h3>
+      <button type="button" class="btn btn-secondary" onclick="document.querySelector('#checkModal').close()" style="padding:4px 10px;">閉じる</button>
+    </div>
+    <div class="dialog-body" id="modalContent"></div>
+  </dialog>
+
+  <script>
+    function resetForm() {
+      if (confirm("フォームの入力内容をすべて消去しますか？")) {
+        document.querySelector("#entryForm").reset();
+      }
+    }
+
+    function showCheckModal() {
+      const modal = document.querySelector("#checkModal");
+      const content = document.querySelector("#modalContent");
+      content.replaceChildren();
+
+      const form = document.querySelector("#entryForm");
+      const elements = [...form.elements].filter(el => el.name && el.type !== "submit" && el.type !== "button");
+
+      let hasAnyValue = false;
+      for (const el of elements) {
+        const row = document.createElement("div");
+        row.className = "dialog-row";
+
+        const labelText = el.closest(".field")?.querySelector("label")?.innerText.split("\n")[0] || el.name;
+        const key = document.createElement("div");
+        key.className = "dialog-key";
+        key.textContent = labelText;
+
+        const val = document.createElement("div");
+        val.className = "dialog-val";
+        val.textContent = el.value || "（未入力）";
+        if (el.value) {
+          hasAnyValue = true;
+          val.style.fontWeight = "600";
+        } else {
+          val.style.color = "#999";
+        }
+
+        row.append(key, val);
+        content.append(row);
+      }
+
+      if (!hasAnyValue) {
+        content.innerHTML = "<p style='color:#c00;'>まだ何も入力されていません。ApplyOnceから一括入力をお試しください。</p>";
+      }
+
+      modal.showModal();
+    }
+  </script>
+</body>
+</html>
