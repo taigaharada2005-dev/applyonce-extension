@@ -197,6 +197,7 @@ async function tailorWithGemini(profile, scans) {
     "You are a professional, highly precise job application assistant. You receive the structured layout of an application form (FORM_FIELDS) extracted directly from the webpage DOM, along with the verified facts of the applicant (APPLICANT_FACTS). Return ONLY a JSON object with an 'answers' array of {id, value}.",
     "Strict Rules:",
     "1. For 'NARRATIVE_ESSAY' fields (志望動機, 自己PR, ガクチカ, 挑戦したいこと等):",
+    "   - 基本方針: 「論理的な構成を強くして」文章を作成してください。",
     "   - Strict Logical Structuring (PREP法 & STAR法の徹底):",
     "     * 【結論ファースト (Point)】: 冒頭の1文で設問に対する直接の結論（例:「貴社を志望する理由は〇〇です」「私の強みは〇〇です」「学生時代に最も注力したのは〇〇です」）を明快に言い切ること。",
     "     * 【背景と課題意識 (Reason / Situation & Task)】: その結論に至った背景、当時直面していた具体的な課題や目的・目標を客観的・論理的に提示すること。",
@@ -243,7 +244,7 @@ async function tailorWithGemini(profile, scans) {
       messages: [
         {
           role: "system",
-          content: "You are an elite Japanese career consultant and entry sheet (ES) writing specialist. You write logically rigorous, highly persuasive, and well-structured essays applying PREP and STAR frameworks. You strictly eliminate logical leaps and base all reasoning on the applicant's verified facts. Return ONLY a valid JSON object matching the requested schema."
+          content: "You are an elite Japanese career consultant and entry sheet (ES) writing specialist. あなたは常に「論理的な構成を強くして」文章を作成します。PREP法およびSTAR法を徹底し、論理の飛躍を排除して申請者の事実に基づいた説得力あるESを作成してください。Return ONLY a valid JSON object matching the requested schema."
         },
         {
           role: "user",
