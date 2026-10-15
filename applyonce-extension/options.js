@@ -65,9 +65,48 @@ function applyDataToForm(data) {
   updateProviderUI();
 })();
 
+// Auto-split names if user enters fullNameJP / fullNameKana
+const fullNameJPInput = form.querySelector('[name="fullNameJP"]');
+const familyJPInput = form.querySelector('[name="familyJP"]');
+const givenJPInput = form.querySelector('[name="givenJP"]');
+
+function autoSplitJP() {
+  const full = fullNameJPInput?.value.trim() || "";
+  if (!full) return;
+  const parts = full.split(/[\s\u3000]+/);
+  if (parts.length >= 2) {
+    if (familyJPInput && !familyJPInput.value.trim()) familyJPInput.value = parts[0];
+    if (givenJPInput && !givenJPInput.value.trim()) givenJPInput.value = parts.slice(1).join(" ");
+  }
+}
+if (fullNameJPInput) {
+  fullNameJPInput.addEventListener("blur", autoSplitJP);
+  fullNameJPInput.addEventListener("change", autoSplitJP);
+}
+
+const fullNameKanaInput = form.querySelector('[name="fullNameKana"]');
+const familyKanaInput = form.querySelector('[name="familyKana"]');
+const givenKanaInput = form.querySelector('[name="givenKana"]');
+
+function autoSplitKana() {
+  const full = fullNameKanaInput?.value.trim() || "";
+  if (!full) return;
+  const parts = full.split(/[\s\u3000]+/);
+  if (parts.length >= 2) {
+    if (familyKanaInput && !familyKanaInput.value.trim()) familyKanaInput.value = parts[0];
+    if (givenKanaInput && !givenKanaInput.value.trim()) givenKanaInput.value = parts.slice(1).join(" ");
+  }
+}
+if (fullNameKanaInput) {
+  fullNameKanaInput.addEventListener("blur", autoSplitKana);
+  fullNameKanaInput.addEventListener("change", autoSplitKana);
+}
+
 // Save handler
 form.addEventListener("submit", async e => {
   e.preventDefault();
+  autoSplitJP();
+  autoSplitKana();
   const profile = Object.fromEntries(fields.map(el => [el.name, el.value.trim()]));
   await chrome.storage.local.set({ profile });
   flashStatus("✓ プロフィールを保存しました。応募フォームで一括入力できます。");

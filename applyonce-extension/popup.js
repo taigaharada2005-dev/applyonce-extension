@@ -190,6 +190,8 @@ async function tailorWithGemini(profile, scans) {
     "   - Look at the field's section, label, and options, and select the corresponding exact fact from APPLICANT_FACTS.",
     "   - If it is a dropdown/select element with options, choose the best matching option string from its provided 'options' list.",
     "   - Do NOT guess or hallucinate sensitive info (such as passwords, criminal records, bank accounts, or visa authorization). If unsure or not applicable, omit the field.",
+    "   - NAME FIELDS RULE: For applicant names (氏名, 姓, 名, Last Name, First Name, etc.), ALWAYS use Japanese Kanji (familyJP / givenJP / fullNameJP) unless the label explicitly requests English, Romaji, or Alphabet (e.g. 'ローマ字', '英語', 'Alphabet', 'Passport'). Never output English/Romaji for standard Kanji name fields.",
+    "   - KANA FIELDS RULE: For Furigana/Kana fields (フリガナ, ふりがな, カナ), ALWAYS use Katakana (familyKana / givenKana / fullNameKana) or Hiragana as requested. Never use Kanji or English.",
     "3. Output Format: Return ONLY a valid JSON object matching this schema:",
     "   {\"answers\": [{\"id\": \"<field_id>\", \"value\": \"<value_to_fill>\"}]}",
     `COMPANY: ${company || "Not specified"}`,

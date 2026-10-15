@@ -150,20 +150,44 @@ function pageRuntime(mode, profile = {}, answers = {}) {
   function firstNonEmpty(...vals) { return vals.find(v => typeof v === "string" && v.trim()) || ""; }
 
   // Prepare profile fields with intelligent splitting and fallback
-  const rawFullJP = profile.fullNameJP || "";
-  const splitJP = rawFullJP.split(/[\s\u3000]+/);
-  const familyJP = firstNonEmpty(profile.familyJP, splitJP[0]);
-  const givenJP = firstNonEmpty(profile.givenJP, splitJP.slice(1).join(" "));
-  const fullJP = firstNonEmpty(profile.fullNameJP, [familyJP, givenJP].filter(Boolean).join(" "));
+  let familyJP = (profile.familyJP || "").trim();
+  let givenJP = (profile.givenJP || "").trim();
+  let fullJP = (profile.fullNameJP || "").trim();
 
-  const rawFullKana = profile.fullNameKana || "";
-  const splitKana = rawFullKana.split(/[\s\u3000]+/);
-  const familyKana = firstNonEmpty(profile.familyKana, splitKana[0]);
-  const givenKana = firstNonEmpty(profile.givenKana, splitKana.slice(1).join(" "));
-  const fullKana = firstNonEmpty(profile.fullNameKana, [familyKana, givenKana].filter(Boolean).join(" "));
+  if ((!familyJP || !givenJP) && fullJP) {
+    const splitJP = fullJP.split(/[\s\u3000]+/);
+    if (splitJP.length >= 2) {
+      if (!familyJP) familyJP = splitJP[0];
+      if (!givenJP) givenJP = splitJP.slice(1).join(" ");
+    } else if (fullJP.length === 4) {
+      if (!familyJP) familyJP = fullJP.slice(0, 2);
+      if (!givenJP) givenJP = fullJP.slice(2);
+    } else if (fullJP.length === 3) {
+      if (!familyJP) familyJP = fullJP.slice(0, 2);
+      if (!givenJP) givenJP = fullJP.slice(2);
+    }
+  }
+  if (!fullJP) {
+    fullJP = [familyJP, givenJP].filter(Boolean).join(" ");
+  }
 
-  const firstEN = profile.firstEN || "";
-  const lastEN = profile.lastEN || "";
+  let familyKana = (profile.familyKana || "").trim();
+  let givenKana = (profile.givenKana || "").trim();
+  let fullKana = (profile.fullNameKana || "").trim();
+
+  if ((!familyKana || !givenKana) && fullKana) {
+    const splitKana = fullKana.split(/[\s\u3000]+/);
+    if (splitKana.length >= 2) {
+      if (!familyKana) familyKana = splitKana[0];
+      if (!givenKana) givenKana = splitKana.slice(1).join(" ");
+    }
+  }
+  if (!fullKana) {
+    fullKana = [familyKana, givenKana].filter(Boolean).join(" ");
+  }
+
+  const firstEN = (profile.firstEN || "").trim();
+  const lastEN = (profile.lastEN || "").trim();
   const fullEN = [firstEN, lastEN].filter(Boolean).join(" ");
 
   // Phone processing (full, hyphenated, non-hyphenated & split support)
@@ -225,13 +249,6 @@ function pageRuntime(mode, profile = {}, answers = {}) {
   function classify(label, el) {
     const s = norm(label);
     const cleanPrimary = cleanJapanese(label.split("|")[0]);
-    const isEnglish = /^[\x00-\x7F]+$/.test(label.split("|")[0]);
-
-    // Check if the current page is Japanese. On Japanese pages, names should default to Kanji unless Romaji/English is explicitly requested.
-    const pageIsJapanese = /[ぁ-んァ-ン一-龥]/.test(document.body?.innerText?.slice(0, 3000) || "") ||
-                           (document.documentElement.lang && document.documentElement.lang.toLowerCase().startsWith("ja"));
-    const fieldWantsEnglish = /ローマ字|英語|アルファベット|romaji|alphabet|in.?english|english.?name/i.test(label);
-    const useEnglishName = fieldWantsEnglish || (!pageIsJapanese && isEnglish);
 
     if (isForbidden(label)) return ["", "除外する機微・確認項目"];
     if (!s || s.length < 2) return ["", "不明な項目"];
@@ -344,14 +361,35 @@ function pageRuntime(mode, profile = {}, answers = {}) {
     }
 
     // 5. Name (Kanji / English / Romaji)
+    // A name field should ONLY be filled with English/Romaji if:
+    // (a) The field explicitly asks for Romaji / English / Alphabet / Passport, and does NOT ask for Kanji/Kana.
+    // (b) OR the whole page is in English (no Japanese characters anywhere in visible body) and the label is purely ASCII.
+    const pageHasJapanese = /[ぁ-んァ-ン一-龥]/.test(document.body?.innerText || "") ||
+                            (document.documentElement.lang && document.documentElement.lang.toLowerCase().startsWith("ja"));
+    const fieldExplicitlyWantsEnglish =
+      /ローマ字|英語|アルファベット|英字|半角英数|romaji|alphabet|passport|in.?english|english.?name/i.test(label) &&
+      !/漢字|かんじ|kanji|日本語|フリガナ|ふりがな|カナ/i.test(label);
+    const useEnglishName = fieldExplicitlyWantsEnglish || (!pageHasJapanese && /^[\x00-\x7F]+$/.test(s));
+
     if (has(/姓|苗字|名字/) || has(/last.?name|family.?name|sur.?name/) || /^(?:sei|name1)$/i.test(el.name || el.id)) {
-      return field(firstNonEmpty(useEnglishName ? lastEN : familyJP, familyJP, lastEN), "姓");
+      if (useEnglishName) {
+        return field(firstNonEmpty(lastEN, fullEN), "姓（英語・ローマ字）");
+      }
+      return field(firstNonEmpty(familyJP, fullJP), "姓（漢字）");
     }
-    if (has(/メイ|first.?name|given.?name/) || isGivenName(cleanPrimary) || /^(?:mei|name2)$/i.test(el.name || el.id)) {
-      return field(firstNonEmpty(useEnglishName ? firstEN : givenJP, givenJP, firstEN), "名");
+
+    if (has(/first.?name|given.?name/) || isGivenName(cleanPrimary) || /^(?:mei|name2)$/i.test(el.name || el.id)) {
+      if (useEnglishName) {
+        return field(firstNonEmpty(firstEN, fullEN), "名（英語・ローマ字）");
+      }
+      return field(firstNonEmpty(givenJP, fullJP), "名（漢字）");
     }
+
     if (has(/full.?name|display.?name|お名前|氏名|名前|your.?name|^name$/)) {
-      return field(firstNonEmpty(useEnglishName ? fullEN : fullJP, fullJP, fullEN), "氏名");
+      if (useEnglishName) {
+        return field(firstNonEmpty(fullEN, lastEN && firstEN ? `${firstEN} ${lastEN}` : ""), "氏名（英語・ローマ字）");
+      }
+      return field(firstNonEmpty(fullJP, [familyJP, givenJP].filter(Boolean).join(" ")), "氏名（漢字）");
     }
 
     // 6. Birth Date (生年月日)
