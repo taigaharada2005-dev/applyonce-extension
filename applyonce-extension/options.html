@@ -136,6 +136,11 @@
         </div>
         <p class="notice">APIキーはブラウザのローカルストレージ（chrome.storage.local）にのみ保存されます。JSONバックアップには含まれません。第三者と共有するPC環境では保存しないでください。</p>
       </section>
+      <section class="panel">
+        <div class="sectionhead"><span class="sectionno">05</span><h2>Google Cloud Vision OCR <span class="optional">任意</span></h2></div>
+        <label class="field"><span>OCR_API_KEY</span><input name="OCR_API_KEY" type="password" autocomplete="off" placeholder="Google Cloud Consoleで発行したAPIキー"/></label>
+        <p class="notice">Cloud Vision APIを有効化し、請求先を設定してください。キーはCloud Vision APIに制限してください。OCR実行時は選択画像または表示中のページ画像をGoogleに送信します（利用料金が発生する場合があります）。キーはローカル保存し、JSONバックアップには含めません。</p>
+      </section>
       <div class="savebar">
         <div id="saveStatus" role="status"></div>
         <div class="saveactions">

@@ -3,10 +3,15 @@
   "name": "ApplyOnce - 就活フォーム一括入力",
   "version": "0.1.0",
   "description": "プロフィールの一括入力と、応募先に合わせたAI文章作成。送信は本人が確認してから。",
-  "permissions": ["storage", "activeTab", "scripting"],
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
   "host_permissions": [
     "https://api.openai.com/*",
-    "https://generativelanguage.googleapis.com/*"
+    "https://generativelanguage.googleapis.com/*",
+    "https://vision.googleapis.com/*"
   ],
   "action": {
     "default_title": "ApplyOnce",

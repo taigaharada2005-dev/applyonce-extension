@@ -45,7 +45,7 @@ if (aiProviderSelect) {
 function applyDataToForm(data) {
   const currentKey = form.querySelector('[name="apiKey"]').value;
   for (const el of fields) {
-    if (el.name === "apiKey") continue;
+    if (["apiKey", "OCR_API_KEY"].includes(el.name)) continue;
     if (data[el.name] !== undefined) {
       el.value = data[el.name];
     }
@@ -134,6 +134,7 @@ document.querySelector("#exportButton").addEventListener("click", async () => {
   const { profile = {} } = await chrome.storage.local.get("profile");
   const exported = { ...profile };
   delete exported.apiKey;
+  delete exported.OCR_API_KEY;
   const blob = new Blob([JSON.stringify(exported, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -159,7 +160,7 @@ importFileInput.addEventListener("change", async e => {
     if (typeof data !== "object" || data === null) throw new Error("無効なJSONフォーマットです");
 
     for (const el of fields) {
-      if (el.name === "apiKey") continue;
+      if (["apiKey", "OCR_API_KEY"].includes(el.name)) continue;
       if (typeof data[el.name] === "string") {
         el.value = data[el.name];
       }

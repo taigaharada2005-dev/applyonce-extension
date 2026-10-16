@@ -22,6 +22,17 @@
       <span id="detected" class="smallnote"></span>
     </div>
 
+    <details class="results">
+      <summary>画像の文字をOCRで補足</summary>
+      <p class="smallnote">実行すると画像をGoogle Cloud Visionに送信します。表示中のページは画面内のみが対象です。読み取り結果を確認してからAI入力を実行してください。</p>
+      <div class="inline-actions">
+        <button class="secondary small" id="ocrPage">表示中のページをOCR</button>
+        <button class="secondary small" id="ocrImage">画像を選んでOCR</button>
+        <input type="file" id="ocrFile" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp" hidden/>
+      </div>
+      <label class="field"><span>OCR補足情報（編集可・AI入力時に使用）</span><textarea id="ocrText" rows="5" maxlength="20000"></textarea></label>
+    </details>
+
     <details id="previewDetails" class="results preview-box" hidden>
       <summary>検出された入力欄のプレビュー (<span id="previewCount">0</span>件)</summary>
       <div id="previewList"></div>
@@ -39,6 +50,7 @@
     <p class="footnote">フォームへの入力のみを実行します。自動送信、利用規約への同意、ファイル添付は行いません。必ず目視確認してから提出してください。</p>
   </main>
   <script src="engine.js"></script>
+  <script src="ocr.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
