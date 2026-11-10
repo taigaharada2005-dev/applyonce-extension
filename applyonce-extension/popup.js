@@ -77,6 +77,19 @@ function parseJson(text) {
   return JSON.parse(cleaned);
 }
 
+function sanitizeAiText(text) {
+  if (typeof text !== "string") return "";
+  // 半角・全角アスタリスク (*, ＊) をすべて除去
+  let cleaned = text.replace(/[*＊]+/g, "");
+  // 各行の前後の余分な空白を整理
+  cleaned = cleaned
+    .split("\n")
+    .map(line => line.trim())
+    .join("\n");
+  // 3つ以上の連続改行を最大2つに抑制し、全体の前後をトリム
+  return cleaned.replace(/\n{3,}/g, "\n\n").trim();
+}
+
 async function tailorWithGemini(profile, scans) {
   if (!profile.apiKey) {
     throw new Error("プロフィール設定の「AI連携」でGemini APIキーを登録してください。");
@@ -212,10 +225,10 @@ async function tailorWithGemini(profile, scans) {
     "     * 設問が求める問い（動機、強み、困難の乗り越え方、キャリアプラン等）から決して脱線せず、最初から最後まで真正面から回答する。",
     "   - Tone: Polite, business Japanese (です・ます調) unless the question is explicitly in English.",
     "   - Character limit: If maxLength > 0, make sure the text does NOT exceed maxLength and aims for 85%-95% of maxLength. If maxLength is 0, write approx 300-450 characters.",
-    "   - Plain text only (no markdown bullets, headings, or asterisks).",
+    "   - Plain text only. Absolutely NEVER use asterisks ('*', '**', '***', or '＊'), markdown bold formatting, markdown headings, or bullet asterisks. Output pure natural human-written Japanese text without any asterisk symbols or AI-like markdown artifacts.",
     "2. For 'BASIC_OR_STRUCTURED_INFO' fields (unmatched form items, specific academic questions, dropdowns, etc.):",
     "   - Look at the field's section, label, and options, and select the corresponding exact fact from APPLICANT_FACTS.",
-    "   - If it is a dropdown/select element with options, choose the best matching option string from its provided 'options' list.",
+    "   - If it is a dropdown/select element with options, choose the best matching option string from its provided 'options' list. If long dropdowns contain dozens of choices (prefectures, birth/graduation years, months, status), pick the option that semantically matches the applicant's fact even if worded slightly differently.",
     "   - Do NOT guess or hallucinate sensitive info (such as passwords, criminal records, bank accounts, or visa authorization). If unsure or not applicable, omit the field.",
     "   - NAME FIELDS RULE: For applicant names (氏名, 姓, 名, Last Name, First Name, etc.), ALWAYS use Japanese Kanji (familyJP / givenJP / fullNameJP) unless the label explicitly requests English, Romaji, or Alphabet (e.g. 'ローマ字', '英語', 'Alphabet', 'Passport'). Never output English/Romaji for standard Kanji name fields.",
     "   - KANA / FURIGANA RULE: Pay strict attention to Hiragana vs Katakana distinction in Japanese:",
@@ -246,7 +259,7 @@ async function tailorWithGemini(profile, scans) {
       messages: [
         {
           role: "system",
-          content: "You are an elite Japanese career consultant and entry sheet (ES) writing specialist. あなたは常に「論理的な構成を強くして」文章を作成します。PREP法およびSTAR法を徹底し、論理の飛躍を排除して申請者の事実に基づいた説得力あるESを作成してください。Return ONLY a valid JSON object matching the requested schema."
+          content: "You are an elite Japanese career consultant and entry sheet (ES) writing specialist. あなたは常に「論理的な構成を強くして」文章を作成します。PREP法およびSTAR法を徹底し、論理の飛躍を排除して申請者の事実に基づいた説得力あるESを作成してください。出力にはアスタリスク（* や ** や ＊ など）やMarkdown記法を一切含めず、人間が自然に書いた純粋なプレーンテキストのみを出力してください。Return ONLY a valid JSON object matching the requested schema."
         },
         {
           role: "user",
@@ -351,7 +364,8 @@ async function tailorWithGemini(profile, scans) {
   for (const answer of data.answers) {
     const field = allowed.get(String(answer.id));
     if (!field || typeof answer.value !== "string" || !answer.value.trim()) continue;
-    const text = answer.value.trim();
+    const text = sanitizeAiText(answer.value);
+    if (!text) continue;
     if (text.length > 5000 || (field.maxLength && text.length > field.maxLength)) continue;
     const [frameId, fieldId] = field.id.split(":");
     if (!answersByFrame[frameId]) answersByFrame[frameId] = {};
@@ -546,3 +560,7 @@ $("#ocrFile").addEventListener("change", event => {
     reader.readAsDataURL(file);
   }));
 });
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { sanitizeAiText, parseJson };
+}

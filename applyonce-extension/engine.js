@@ -14,6 +14,16 @@ function pageRuntime(mode, profile = {}, answers = {}) {
       .replace(/(?:※|必須|必修|任意|漢字|全角|半角|全角入力|半角数字|半角英数|ハイフンなし|ハイフンあり|ハイフン不要|例[：:]?)+/gi, "");
   }
 
+  function cleanAiText(s) {
+    if (typeof s !== "string") return "";
+    let cleaned = s.replace(/[*＊]+/g, "");
+    cleaned = cleaned
+      .split("\n")
+      .map(line => line.trim())
+      .join("\n");
+    return cleaned.replace(/\n{3,}/g, "\n\n").trim();
+  }
+
   function toHiragana(str) {
     return String(str || "").replace(/[\u30a1-\u30f6]/g, ch =>
       String.fromCharCode(ch.charCodeAt(0) - 0x60)
@@ -24,6 +34,160 @@ function pageRuntime(mode, profile = {}, answers = {}) {
     return String(str || "").replace(/[\u3041-\u3096]/g, ch =>
       String.fromCharCode(ch.charCodeAt(0) + 0x60)
     );
+  }
+
+  const PREFECTURES = [
+    { code: 1, name: "北海道", short: "北海道" },
+    { code: 2, name: "青森県", short: "青森" },
+    { code: 3, name: "岩手県", short: "岩手" },
+    { code: 4, name: "宮城県", short: "宮城" },
+    { code: 5, name: "秋田県", short: "秋田" },
+    { code: 6, name: "山形県", short: "山形" },
+    { code: 7, name: "福島県", short: "福島" },
+    { code: 8, name: "茨城県", short: "茨城" },
+    { code: 9, name: "栃木県", short: "栃木" },
+    { code: 10, name: "群馬県", short: "群馬" },
+    { code: 11, name: "埼玉県", short: "埼玉" },
+    { code: 12, name: "千葉県", short: "千葉" },
+    { code: 13, name: "東京都", short: "東京" },
+    { code: 14, name: "神奈川県", short: "神奈川" },
+    { code: 15, name: "新潟県", short: "新潟" },
+    { code: 16, name: "富山県", short: "富山" },
+    { code: 17, name: "石川県", short: "石川" },
+    { code: 18, name: "福井県", short: "福井" },
+    { code: 19, name: "山梨県", short: "山梨" },
+    { code: 20, name: "長野県", short: "長野" },
+    { code: 21, name: "岐阜県", short: "岐阜" },
+    { code: 22, name: "静岡県", short: "静岡" },
+    { code: 23, name: "愛知県", short: "愛知" },
+    { code: 24, name: "三重県", short: "三重" },
+    { code: 25, name: "滋賀県", short: "滋賀" },
+    { code: 26, name: "京都府", short: "京都" },
+    { code: 27, name: "大阪府", short: "大阪" },
+    { code: 28, name: "兵庫県", short: "兵庫" },
+    { code: 29, name: "奈良県", short: "奈良" },
+    { code: 30, name: "和歌山県", short: "和歌山" },
+    { code: 31, name: "鳥取県", short: "鳥取" },
+    { code: 32, name: "島根県", short: "島根" },
+    { code: 33, name: "岡山県", short: "岡山" },
+    { code: 34, name: "広島県", short: "広島" },
+    { code: 35, name: "山口県", short: "山口" },
+    { code: 36, name: "徳島県", short: "徳島" },
+    { code: 37, name: "香川県", short: "香川" },
+    { code: 38, name: "愛媛県", short: "愛媛" },
+    { code: 39, name: "高知県", short: "高知" },
+    { code: 40, name: "福岡県", short: "福岡" },
+    { code: 41, name: "佐賀県", short: "佐賀" },
+    { code: 42, name: "長崎県", short: "長崎" },
+    { code: 43, name: "熊本県", short: "熊本" },
+    { code: 44, name: "大分県", short: "大分" },
+    { code: 45, name: "宮崎県", short: "宮崎" },
+    { code: 46, name: "鹿児島県", short: "鹿児島" },
+    { code: 47, name: "沖縄県", short: "沖縄" }
+  ];
+
+  function isPrefectureString(s) {
+    const n = norm(s);
+    return PREFECTURES.some(p => n.includes(norm(p.name)) || n.includes(norm(p.short)));
+  }
+
+  function matchPrefectureOption(options, valStr) {
+    const n = norm(valStr);
+    const found = PREFECTURES.find(p => n.includes(norm(p.name)) || n.includes(norm(p.short)));
+    if (!found) return null;
+
+    const codeStr = String(found.code);
+    const codePad = codeStr.padStart(2, "0");
+
+    // 1. 都道府県名で検索 (東京都, 東京)
+    let opt = options.find(o => {
+      const t = norm(o.text);
+      const v = norm(o.value);
+      return t.includes(norm(found.name)) || t.includes(norm(found.short)) ||
+             v.includes(norm(found.name)) || v.includes(norm(found.short));
+    });
+    if (opt) return opt;
+
+    // 2. JISコードで検索 (value="13" や value="013" や text="13")
+    opt = options.find(o => {
+      const v = String(o.value || "").trim();
+      const t = String(o.text || "").trim();
+      return v === codeStr || v === codePad || t.startsWith(codeStr) || t.startsWith(codePad);
+    });
+    return opt || null;
+  }
+
+  function matchYearOption(options, valStr, valNum) {
+    let y = !isNaN(valNum) && valNum >= 1900 && valNum <= 2100 ? valNum : null;
+    if (!y) {
+      const m = String(valStr).match(/(19\d{2}|20\d{2})/);
+      if (m) y = parseInt(m[1], 10);
+    }
+    // 和暦から西暦を抽出 (例: 平成14年 -> 2002)
+    if (!y) {
+      const s = norm(valStr);
+      let wm;
+      if ((wm = s.match(/(?:令和|r)(\d+|元)/))) y = 2018 + (wm[1] === "元" ? 1 : parseInt(wm[1], 10));
+      else if ((wm = s.match(/(?:平成|h)(\d+|元)/))) y = 1988 + (wm[1] === "元" ? 1 : parseInt(wm[1], 10));
+      else if ((wm = s.match(/(?:昭和|s)(\d+|元)/))) y = 1925 + (wm[1] === "元" ? 1 : parseInt(wm[1], 10));
+    }
+    if (!y) return null;
+
+    const warekiList = [];
+    if (y >= 2019) {
+      const r = y - 2018;
+      warekiList.push(`令和${r}年`, `令和${r}`, `R${r}`, `R${String(r).padStart(2, "0")}`, r === 1 ? "令和元年" : "");
+    }
+    if (y >= 1989 && y <= 2019) {
+      const h = y - 1988;
+      warekiList.push(`平成${h}年`, `平成${h}`, `H${h}`, `H${String(h).padStart(2, "0")}`, h === 1 ? "平成元年" : "");
+    }
+    if (y >= 1926 && y <= 1989) {
+      const s = y - 1925;
+      warekiList.push(`昭和${s}年`, `昭和${s}`, `S${s}`, `S${String(s).padStart(2, "0")}`, s === 1 ? "昭和元年" : "");
+    }
+    const normWareki = warekiList.filter(Boolean).map(norm);
+
+    // 1. 選択肢テキストまたは値に含まれる4桁数値を照合 (例: "2002年", "2002(H14)", "平成14年(2002年)")
+    let opt = options.find(o => {
+      const t = String(o.text || "");
+      const v = String(o.value || "");
+      const nums = (t + " " + v).match(/\d{4}/g) || [];
+      return nums.some(n => parseInt(n, 10) === y);
+    });
+    if (opt) return opt;
+
+    // 2. 和暦での一致 (例: "平成14年", "H14")
+    opt = options.find(o => {
+      const t = norm(o.text);
+      const v = norm(o.value);
+      return normWareki.some(w => t.includes(w) || v.includes(w));
+    });
+    if (opt) return opt;
+
+    // 3. 末尾2桁西暦
+    const shortYear = String(y).slice(-2);
+    opt = options.find(o => norm(o.value) === shortYear || norm(o.text) === `${shortYear}年`);
+    return opt || null;
+  }
+
+  function matchNumericOption(options, valNum) {
+    const numPad = String(valNum).padStart(2, "0");
+    const numStr = String(valNum);
+
+    // 1. value の完全一致 ("3" または "03")
+    let opt = options.find(o => {
+      const v = String(o.value || "").trim();
+      return v === numStr || v === numPad;
+    });
+    if (opt) return opt;
+
+    // 2. text 内の数値照合 (例: "3月", "03日", "3")
+    opt = options.find(o => {
+      const nums = ((o.text || "") + " " + (o.value || "")).match(/\d+/g) || [];
+      return nums.some(n => parseInt(n, 10) === valNum);
+    });
+    return opt || null;
   }
 
   function getDirectText(el) {
@@ -121,17 +285,18 @@ function pageRuntime(mode, profile = {}, answers = {}) {
     if (el.matches("select")) {
       return [...el.options]
         .map(o => tidy(o.text || o.value))
-        .filter(t => t && !/選択してください|^選択$|^--$|^-$|^\s*$/i.test(t))
-        .slice(0, 20);
+        .filter(t => t && !/^(?:選択してください|選択|未選択|--|-|ご選択ください|選んでください|\s*)$/i.test(t))
+        .slice(0, 150);
     }
     return [];
   }
 
   function typeOf(el) {
     if (el.matches('input[type="radio"]')) return "radio";
+    if (el.matches('select')) return "select";
+    if (el.matches('input[role="combobox"], [aria-haspopup="listbox"], [aria-haspopup="true"]')) return "combobox";
     if (el.matches('input')) return (el.type || "text").toLowerCase();
     if (el.matches('textarea')) return "textarea";
-    if (el.matches('select')) return "select";
     return "contenteditable";
   }
 
@@ -139,13 +304,14 @@ function pageRuntime(mode, profile = {}, answers = {}) {
     if (typeof el.checkVisibility === "function") {
       return el.checkVisibility({ checkOpacity: false, checkVisibilityCSS: true });
     }
-    return Boolean(el.offsetParent !== null || window.getComputedStyle(el).display !== "none");
+    return Boolean(el.offsetParent !== null || (typeof window !== "undefined" && window.getComputedStyle(el).display !== "none"));
   }
 
   function eligible(el) {
-    if (el.disabled || el.readOnly || el.closest("[inert]")) return false;
+    const isCombobox = el.matches ? el.matches('[role="combobox"], [aria-haspopup="listbox"], [aria-haspopup="true"]') : false;
+    if (el.disabled || (el.readOnly && !isCombobox) || el.closest("[inert]")) return false;
     const type = typeOf(el);
-    if (!["text", "email", "tel", "url", "number", "date", "textarea", "select", "radio", "contenteditable"].includes(type)) return false;
+    if (!["text", "email", "tel", "url", "number", "date", "textarea", "select", "radio", "combobox", "contenteditable"].includes(type)) return false;
     if (el.getAttribute("aria-hidden") === "true") return false;
     if (el.hidden || !isVisible(el)) return false;
     if (el.matches("[contenteditable]")) return el.getAttribute("contenteditable") !== "false";
@@ -241,10 +407,30 @@ function pageRuntime(mode, profile = {}, answers = {}) {
   const zipHyphen = zipRaw.length === 7 ? `${zip1}-${zip2}` : profile.postalCode || "";
 
   // Address processing (single, 2-box, 3-box support)
-  const pref = profile.prefecture || "";
-  const city = profile.city || "";
-  const addrLine = profile.addressLine || profile.address || "";
-  const building = profile.building || "";
+  let pref = profile.prefecture || "";
+  let city = profile.city || "";
+  let addrLine = profile.addressLine || "";
+  let building = profile.building || "";
+  const rawAddr = (profile.address || "").trim();
+
+  // If pref/city/addrLine are missing but full address exists, intelligently parse Japanese address
+  if ((!pref || !city || !addrLine) && rawAddr) {
+    const prefMatch = rawAddr.match(/^(東京都|北海道|京都府|大阪府|.{2,3}県)/);
+    if (!pref && prefMatch) {
+      pref = prefMatch[1];
+    }
+    const remAfterPref = prefMatch ? rawAddr.slice(prefMatch[1].length).trim() : rawAddr;
+    const cityMatch = remAfterPref.match(/^([^市区町村]+?[市区町村])/);
+    if (!city && cityMatch) {
+      city = cityMatch[1];
+    }
+    if (!addrLine) {
+      const remAfterCity = cityMatch ? remAfterPref.slice(cityMatch[1].length).trim() : remAfterPref;
+      addrLine = remAfterCity;
+    }
+  }
+  if (!addrLine && profile.address) addrLine = profile.address;
+
   const fullAddress = firstNonEmpty(
     profile.address,
     [pref, city, addrLine, building].filter(Boolean).join("")
@@ -260,8 +446,8 @@ function pageRuntime(mode, profile = {}, answers = {}) {
     let container = el.closest(".row, .form-group, .field, .form-row, tr, div, fieldset, li, p") || el.parentElement;
     if (container && container.matches("form, body, main")) container = el.parentElement;
     if (!container) return [el];
-    const inputs = [...container.querySelectorAll('input')].filter(inp => {
-      const type = (inp.type || "text").toLowerCase();
+    const inputs = [...container.querySelectorAll('input, select')].filter(inp => {
+      const type = typeOf(inp);
       if (["hidden", "submit", "button", "checkbox", "radio"].includes(type)) return false;
       const l = norm(getLabel(inp));
       const n = (inp.name || "") + " " + (inp.id || "") + " " + (inp.placeholder || "");
@@ -325,6 +511,14 @@ function pageRuntime(mode, profile = {}, answers = {}) {
       const famK = wantHiragana ? toHiragana(familyKana) : toKatakana(familyKana);
       const givK = wantHiragana ? toHiragana(givenKana) : toKatakana(givenKana);
       const fulK = wantHiragana ? toHiragana(fullKana) : toKatakana(fullKana);
+
+      // Sibling group detection: if 2 inputs are grouped under Kana, allocate Sei and Mei
+      const kanaSiblings = findInputSiblings(el, (l, n) => /フリガナ|ふりがな|カナ|kana/i.test(l) || /kana|sei|mei/i.test(n));
+      if (kanaSiblings.length === 2) {
+        const idx = kanaSiblings.indexOf(el);
+        if (idx === 0) return field(famK, wantHiragana ? "ふりがな（姓・ひらがな）" : "フリガナ（姓・カタカナ）");
+        if (idx === 1) return field(givK, wantHiragana ? "ふりがな（名・ひらがな）" : "フリガナ（名・カタカナ）");
+      }
 
       if (has(/姓|セイ|せい|苗字|名字|last/) || /^(?:sei|kana1)$/i.test(el.name || el.id)) {
         return field(famK, wantHiragana ? "ふりがな（姓・ひらがな）" : "フリガナ（姓・カタカナ）");
@@ -434,6 +628,20 @@ function pageRuntime(mode, profile = {}, answers = {}) {
       !/漢字|かんじ|kanji|日本語|フリガナ|ふりがな|カナ/i.test(label);
     const useEnglishName = fieldExplicitlyWantsEnglish || (!pageHasJapanese && /^[\x00-\x7F]+$/.test(s));
 
+    // Sibling detection for split Name fields (handles <label>氏名</label> <input> <input>)
+    if (has(/氏名|お名前|名前|^name/)) {
+      const nameSiblings = findInputSiblings(el, (l, n) => /氏名|お名前|名前|^name/i.test(l) || /name|sei|mei/i.test(n));
+      if (nameSiblings.length === 2) {
+        const idx = nameSiblings.indexOf(el);
+        if (idx === 0) {
+          return useEnglishName ? field(firstNonEmpty(lastEN, fullEN), "姓（英語・ローマ字）") : field(firstNonEmpty(familyJP, fullJP), "姓（漢字）");
+        }
+        if (idx === 1) {
+          return useEnglishName ? field(firstNonEmpty(firstEN, fullEN), "名（英語・ローマ字）") : field(firstNonEmpty(givenJP, fullJP), "名（漢字）");
+        }
+      }
+    }
+
     if (has(/姓|苗字|名字/) || has(/last.?name|family.?name|sur.?name/) || /^(?:sei|name1)$/i.test(el.name || el.id)) {
       if (useEnglishName) {
         return field(firstNonEmpty(lastEN, fullEN), "姓（英語・ローマ字）");
@@ -457,9 +665,47 @@ function pageRuntime(mode, profile = {}, answers = {}) {
 
     // 6. Birth Date (生年月日)
     if (has(/生年月日|誕生|birthday|birth.?date|生年/)) {
-      if (has(/年|year|yyyy/)) return field(profile.birthYear, "生年月日（年）");
-      if (has(/月|month|mm/)) return field(profile.birthMonth, "生年月日（月）");
-      if (has(/日|day|dd/)) return field(profile.birthDay, "生年月日（日）");
+      const directClean = (getDirectText(el) || "").replace(/生年月日|生年|birthday|birth.?date/gi, "");
+      const sWithoutGeneral = s.replace(/生年月日|生年|birthday|birth.?date/gi, "");
+      const nameId = ((el.name || "") + " " + (el.id || "")).toLowerCase();
+
+      // Sibling group detection: if 3 inputs/selects are grouped together under "生年月日"
+      if (typeOf(el) === "select" || el.matches("input")) {
+        const birthSiblings = findInputSiblings(el, (l, n) => /生年月日|誕生|birthday|birth/i.test(l) || /birth|year|month|day/i.test(n));
+        if (birthSiblings.length === 3) {
+          const idx = birthSiblings.indexOf(el);
+          if (idx === 0) return field(profile.birthYear, "生年月日（年）");
+          if (idx === 1) return field(profile.birthMonth, "生年月日（月）");
+          if (idx === 2) return field(profile.birthDay, "生年月日（日）");
+        }
+      }
+
+      // Check options characteristics if it's a select element
+      if (typeOf(el) === "select" && el.options) {
+        const opts = [...el.options].filter(o => o.value && !/選択|--/.test(o.text));
+        const sampleNums = opts.slice(0, 8).map(o => parseInt(o.value || o.text, 10)).filter(n => !isNaN(n));
+        if (sampleNums.some(n => n >= 1900 && n <= 2100)) {
+          return field(profile.birthYear, "生年月日（年）");
+        }
+        if (sampleNums.length > 0 && sampleNums.every(n => n >= 1 && n <= 12) && opts.length <= 13) {
+          return field(profile.birthMonth, "生年月日（月）");
+        }
+        if (sampleNums.length > 0 && sampleNums.some(n => n > 12 && n <= 31) && opts.length <= 32) {
+          return field(profile.birthDay, "生年月日（日）");
+        }
+      }
+
+      const isM = /月|month|mm/i.test(sWithoutGeneral) || /月|month|mm/i.test(directClean) || /(?:^|[_\-])month(?:$|[_\-])/i.test(nameId);
+      const isD = /日|day|dd/i.test(sWithoutGeneral) || /日|day|dd/i.test(directClean) || /(?:^|[_\-])day(?:$|[_\-])/i.test(nameId);
+      const isY = /年|year|yyyy/i.test(sWithoutGeneral) || /年|year|yyyy/i.test(directClean) || /(?:^|[_\-])year(?:$|[_\-])/i.test(nameId) || has(/生年$/);
+
+      if (isM && !isY) return field(profile.birthMonth, "生年月日（月）");
+      if (isD && !isY) return field(profile.birthDay, "生年月日（日）");
+      if (isY && !isM && !isD) return field(profile.birthYear, "生年月日（年）");
+      if (isM) return field(profile.birthMonth, "生年月日（月）");
+      if (isD) return field(profile.birthDay, "生年月日（日）");
+      if (isY) return field(profile.birthYear, "生年月日（年）");
+
       if (typeOf(el) === "date") {
         const ym = `${profile.birthYear}-${String(profile.birthMonth || "01").padStart(2, '0')}-${String(profile.birthDay || "01").padStart(2, '0')}`;
         return field(ym, "生年月日");
@@ -509,8 +755,14 @@ function pageRuntime(mode, profile = {}, answers = {}) {
     if (has(/portfolio|ポートフォリオ|website|web.?site|personal.?url/)) return field(profile.portfolio, "Portfolio");
 
     // 12. Education
-    if (has(/graduation.?year|卒業年|卒業予定年|修了年/)) return field(profile.graduationYear, "卒業年");
-    if (has(/graduation.?month|卒業予定月|卒業月/)) return field(profile.graduationMonth, "卒業月");
+    const directEdu = getDirectText(el);
+    const nameIdEdu = (el.name || "") + " " + (el.id || "");
+    if (has(/graduation.?month|卒業予定月|卒業月|修了月/) || ((has(/卒業年月|修了年月/) || /graduation/i.test(nameIdEdu)) && (/月|month/i.test(directEdu) || /month/i.test(nameIdEdu)))) {
+      return field(profile.graduationMonth, "卒業月");
+    }
+    if (has(/graduation.?year|卒業年|卒業予定年|修了年/) || ((has(/卒業年月|修了年月/) || /graduation/i.test(nameIdEdu)) && (/年|year/i.test(directEdu) || /year/i.test(nameIdEdu)))) {
+      return field(profile.graduationYear, "卒業年");
+    }
     if (has(/degree|学位/)) return field(profile.degree, "学位");
     if (has(/school.?name|学校名|大学名|university|college|在籍大学/)) {
       return field(firstNonEmpty(useEnglishName ? profile.schoolEN : profile.schoolJP, profile.schoolJP, profile.schoolEN), "学校名");
@@ -574,66 +826,163 @@ function pageRuntime(mode, profile = {}, answers = {}) {
       const labelText = norm(getLabel(el));
       const valText = norm(el.value);
       let isMatch = valText === want || labelText.includes(want) || want.includes(valText);
+
+      // Gender specific matching
+      if (!isMatch) {
+        if (/男|male/.test(want) && !/女|female/.test(want)) {
+          isMatch = /^男性?$|^男$|^male$|^m$/i.test(valText) || /^男性?$|^男$|^male$|^m$/i.test(labelText) || /男性|男/.test(labelText);
+        } else if (/女|female/.test(want)) {
+          isMatch = /^女性?$|^女$|^female$|^f$/i.test(valText) || /^女性?$|^女$|^female$|^f$/i.test(labelText) || /女性|女/.test(labelText);
+        }
+      }
+
       if (!isMatch && (/理系/.test(want) && /理系/.test(valText + labelText))) isMatch = true;
       if (!isMatch && (/文系/.test(want) && /文系/.test(valText + labelText))) isMatch = true;
       if (!isMatch && (/見込/.test(want) && /見込/.test(valText + labelText))) isMatch = true;
       if (!isMatch && (/学士/.test(want) && /学士|学部/.test(valText + labelText))) isMatch = true;
 
       if (isMatch) {
+        try { el.scrollIntoView?.({ block: "nearest", inline: "nearest" }); } catch {}
         el.focus();
         el.checked = true;
+        try { el.click(); } catch {}
         el.dispatchEvent(new Event("input", { bubbles: true }));
         el.dispatchEvent(new Event("change", { bubbles: true }));
-        el.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        if (typeof MouseEvent !== "undefined") {
+          try { el.dispatchEvent(new MouseEvent("click", { bubbles: true })); } catch {}
+        }
         el.blur();
         return true;
       }
       return false;
     }
 
+    if (type === "combobox") {
+      try { el.scrollIntoView?.({ block: "nearest", inline: "nearest" }); } catch {}
+      el.focus();
+      const protoObj = typeof HTMLInputElement !== "undefined" ? HTMLInputElement.prototype : Object.getPrototypeOf(el);
+      const setter = protoObj ? Object.getOwnPropertyDescriptor(protoObj, "value")?.set : null;
+      if (setter) {
+        setter.call(el, val);
+      } else {
+        el.value = val;
+      }
+      el.dispatchEvent(new Event("input", { bubbles: true, cancelable: true }));
+      el.dispatchEvent(new Event("change", { bubbles: true, cancelable: true }));
+      el.blur();
+      return true;
+    }
+
     if (type === "select") {
-      const opts = [...el.options];
+      const allOpts = [...el.options].filter(o => o && !o.disabled);
+      // 未選択・プレースホルダー的な選択肢を除外した候補
+      const validOpts = allOpts.filter(o => {
+        const t = tidy(o.text || o.value);
+        return t && !/^(?:選択してください|選択|未選択|--|-|ご選択ください|選んでください|\s*)$/i.test(t);
+      });
+      const opts = validOpts.length > 0 ? validOpts : allOpts;
+
       const want = norm(val);
-      const valNum = parseInt(val, 10);
+      const valStr = String(val).trim();
+      const valNum = parseInt(valStr, 10);
+      const fieldLabel = norm(getLabel(el));
+      const hasInLabel = (...rs) => rs.some(r => r.test(fieldLabel));
 
-      // Multiple matching strategies for dropdown options:
-      // 1. Exact norm match on value or text
-      let matching = opts.find(o => norm(o.value) === want || norm(o.text) === want);
+      let matching = null;
 
-      // 2. Numeric match (e.g. "03" <-> "3月" or "3", "2028" <-> "2028年")
-      if (!matching && !isNaN(valNum)) {
-        matching = opts.find(o => {
-          const optNum = parseInt(o.value || o.text, 10);
-          return !isNaN(optNum) && optNum === valNum;
-        });
+      // 1. 完全一致 (value または text の norm 一致)
+      matching = opts.find(o => norm(o.value) === want || norm(o.text) === want);
+
+      // 2. 都道府県の高度マッチング (JISコード, 都道府県名, 短縮形)
+      if (!matching && (hasInLabel(/都道府県|prefecture|県名|居住|所在/) || isPrefectureString(valStr))) {
+        matching = matchPrefectureOption(opts, valStr);
       }
 
-      // 3. Fuzzy degree/status match (e.g. "学士" <-> "大学（学部・学士）", "卒業見込み" <-> "見込")
+      // 3. 西暦・和暦・年号の高度マッチング (2002年 ⇔ 平成14年 / H14 / 2002(H14))
+      if (!matching && (hasInLabel(/年|year|yyyy|誕生|生年|生年月日|卒業/) || (!isNaN(valNum) && valNum >= 1920 && valNum <= 2060))) {
+        matching = matchYearOption(opts, valStr, valNum);
+      }
+
+      // 4. 月・日の数値照合 (03 ⇔ 3月 ⇔ 3, 01 ⇔ 1日 ⇔ 1)
+      if (!matching && !isNaN(valNum) && (hasInLabel(/月|month|日|day/) || (valNum >= 1 && valNum <= 31))) {
+        matching = matchNumericOption(opts, valNum);
+      }
+
+      // 5. 学位・卒業区分・文理区分・性別のファジーマッチ
       if (!matching) {
         if (/学士|学部|大学/.test(want)) {
-          matching = opts.find(o => /学士|学部|大学（学部/i.test(o.text || o.value) && !/院|修士|博士|短期/.test(o.text || o.value));
+          matching = opts.find(o => /学士|学部|大学（学部/i.test(o.text || o.value) && !/院|修士|博士|短期|高専/.test(o.text || o.value));
         } else if (/修士|大学院/.test(want)) {
-          matching = opts.find(o => /修士|大学院/i.test(o.text || o.value));
+          matching = opts.find(o => /修士|大学院/i.test(o.text || o.value) && !/博士/.test(o.text || o.value));
+        } else if (/博士/.test(want)) {
+          matching = opts.find(o => /博士/i.test(o.text || o.value));
         } else if (/見込/.test(want)) {
-          matching = opts.find(o => /見込/i.test(o.text || o.value));
+          matching = opts.find(o => /見込|在学|予定/i.test(o.text || o.value));
+        } else if (/卒業|既卒/.test(want) && !/見込|予定/.test(want)) {
+          matching = opts.find(o => /卒業|既卒/i.test(o.text || o.value) && !/見込|予定/.test(o.text || o.value));
         } else if (/理系/.test(want)) {
           matching = opts.find(o => /理系/i.test(o.text || o.value));
         } else if (/文系/.test(want)) {
           matching = opts.find(o => /文系/i.test(o.text || o.value));
+        } else if (/男/.test(want) && !/女/.test(want)) {
+          matching = opts.find(o => /^男性?$|^男$|^male$/i.test(norm(o.text)) || /^男性?$|^男$|^male$/i.test(norm(o.value)));
+        } else if (/女/.test(want)) {
+          matching = opts.find(o => /^女性?$|^女$|^female$/i.test(norm(o.text)) || /^女性?$|^女$|^female$/i.test(norm(o.value)));
         }
       }
 
-      // 4. Substring match (e.g. "東京都" <-> "東京")
-      if (!matching && want) {
-        matching = opts.find(o => norm(o.text).includes(want) || want.includes(norm(o.text)));
+      // 6. 一般的な数値一致フォールバック
+      if (!matching && !isNaN(valNum)) {
+        matching = matchNumericOption(opts, valNum);
+      }
+
+      // 7. 前方一致 / 部分一致 (長い選択肢テキスト優先・2文字以上の一致)
+      if (!matching && want.length >= 2) {
+        // (a) 選択肢テキストが入力値を含む
+        matching = opts.find(o => norm(o.text).includes(want) || norm(o.value).includes(want));
+        // (b) 入力値が選択肢テキストを含む (最長一致優先で「都」などの1文字誤爆を完全防止)
+        if (!matching) {
+          const sorted = [...opts]
+            .filter(o => {
+              const ot = norm(o.text);
+              return ot.length >= 2 && want.includes(ot);
+            })
+            .sort((a, b) => norm(b.text).length - norm(a.text).length);
+          if (sorted.length > 0) matching = sorted[0];
+        }
       }
 
       if (!matching || matching.disabled || (!matching.value && !matching.text)) return false;
 
+      // 画面外にある長いプルダウンに対応するため、可視範囲にスクロール
+      try {
+        el.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+      } catch {}
+
       el.focus();
-      el.value = matching.value;
-      el.dispatchEvent(new Event("input", { bubbles: true }));
-      el.dispatchEvent(new Event("change", { bubbles: true }));
+
+      // React / Vue / Angular 等の仮想DOMフレームワークの変更検知を確実に発火
+      const proto = typeof HTMLSelectElement !== "undefined" ? HTMLSelectElement.prototype : Object.getPrototypeOf(el);
+      const setter = proto ? Object.getOwnPropertyDescriptor(proto, "value")?.set : null;
+      if (setter) {
+        setter.call(el, matching.value);
+      } else {
+        el.value = matching.value;
+      }
+
+      try {
+        if (typeof matching.index === "number" && matching.index >= 0) {
+          el.selectedIndex = matching.index;
+        }
+        matching.selected = true;
+      } catch {}
+
+      el.dispatchEvent(new Event("input", { bubbles: true, cancelable: true }));
+      el.dispatchEvent(new Event("change", { bubbles: true, cancelable: true }));
+      try {
+        el.dispatchEvent(new UIEvent("change", { bubbles: true }));
+      } catch {}
+
       el.blur();
       return true;
     }
@@ -643,8 +992,10 @@ function pageRuntime(mode, profile = {}, answers = {}) {
     if (type === "url" && !/^https?:\/\//i.test(String(val).trim())) return false;
 
     el.focus();
-    const prototype = type === "textarea" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
-    const setter = Object.getOwnPropertyDescriptor(prototype, "value")?.set;
+    const protoObj = type === "textarea"
+      ? (typeof HTMLTextAreaElement !== "undefined" ? HTMLTextAreaElement.prototype : Object.getPrototypeOf(el))
+      : (typeof HTMLInputElement !== "undefined" ? HTMLInputElement.prototype : Object.getPrototypeOf(el));
+    const setter = protoObj ? Object.getOwnPropertyDescriptor(protoObj, "value")?.set : null;
     if (setter) {
       setter.call(el, val);
     } else {
@@ -703,7 +1054,7 @@ function pageRuntime(mode, profile = {}, answers = {}) {
     const [ruleValue, ruleReason] = classify(f.label, el);
 
     // Step 2: AI answers (applicable for narrative fields or as intelligent fallback for unclassified basic fields)
-    const rawAiValue = typeof answers[String(f.index)] === "string" ? answers[String(f.index)].trim() : "";
+    const rawAiValue = typeof answers[String(f.index)] === "string" ? cleanAiText(answers[String(f.index)]) : "";
 
     // Priority:
     // - If it's a narrative field (志望動機・自己PR等) and AI generated an answer, prioritize AI.
@@ -760,4 +1111,8 @@ function pageRuntime(mode, profile = {}, answers = {}) {
   }
 
   return { filled, skipped, details, title, frameUrl: location.href };
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { pageRuntime };
 }
